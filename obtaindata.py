@@ -1,4 +1,10 @@
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 def readdata(idcode):
+    
     try:
         from ucimlrepo import fetch_ucirepo
         # fetch dataset 
@@ -11,11 +17,12 @@ def readdata(idcode):
 #        print("/n")
        
         # variable information 
-        print(apartment_for_rent_classified.variables) 
+        logger.debug("features from aparment_for_rent_Classified")
+        logger.debug(apartment_for_rent_classified.variables) 
 
         return data
     except ModuleNotFoundError:
-        print("La librería 'ucimlrepo' no está instalada.")
+        logger.debug("La librería 'ucimlrepo' no está instalada.")
         # Puedes añadir aquí un comando para instalarla, por ejemplo:
         import subprocess
         subprocess.check_call(["pip", "install", "ucimlrepo"])
