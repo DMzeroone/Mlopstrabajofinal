@@ -1,4 +1,5 @@
 #pip install ucimlrepov
+#codigo de https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified
 #
 import logging
 
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     logger.debug(data.info())
 
     logger.debug("Data describe")
-    logger.debug(data.head())
+    logger.debug(data.describe())
 
 #    print(data.info())
 
