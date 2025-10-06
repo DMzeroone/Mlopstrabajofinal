@@ -21,6 +21,9 @@ def cleandata(datos):
 
     datostransformados = datos.copy()
 
+    #si filtramos por price_type se logra mas consistencia, solo hay 4 registros monthly y monthly|weekly
+    datostransformados = datostransformados[datostransformados['price_type'] == 'Monthly']
+
     datostransformados['bathrooms'] = pd.to_numeric(datos['bathrooms'], errors='coerce')
     datostransformados['bedrooms'] = pd.to_numeric(datos['bedrooms'], errors='coerce')
     datostransformados['square_feet'] = pd.to_numeric(datos['square_feet'], errors='coerce')
@@ -45,34 +48,32 @@ def cleandata(datos):
     datostransformados = pd.get_dummies(datostransformados, columns=['pets_allowed'], prefix='pets', drop_first=True, dtype=int)
 
 
-    datostransformados = pd.get_dummies(datostransformados, columns=['price_type'], prefix='pri', drop_first=True, dtype=int)
+    #datostransformados = pd.get_dummies(datostransformados, columns=['price_type'], prefix='pri', drop_first=True, dtype=int)
 
     #error al leer los datos, borrar columnas que no deberian estar creadas, posiblemente por comas en las columnas title o body\
 
-    del datostransformados['cat_Gym']
-    del datostransformados['pets_Monthly']
-    del datostransformados['pri_Los Angeles']
-    del datostransformados['pri_VA']
 
     try:
-        datostransformados.to_csv(path+"dataset.csv")
+        '''
+        del datostransformados['cat_Gym']
+        del datostransformados['pets_Monthly']
+        del datostransformados['pri_Los Angeles']
+        del datostransformados['pri_VA']
+        '''
+
+        datostransformados.to_csv(path+"dataset.csv",sep=";")
+        #datostransformados.to_csv(path+"dataset.csv")
 
     except FileNotFoundError:
-        logger.error("CSV no encontrado")
+        logger.debug("CSV no encontrado")
     except pd.errors.EmptyDataError:
-        print(f"Error: el archivo '{path}' esta vacio o sin datos.")
+        logger.debug("Error: el archivo '{path}' esta vacio o sin datos.")
     except pd.errors.ParserError as e:
-        print(f"Error parsing el archivo CSV  '{path}': {e}")
+        logger.debug(f"Error parsing el archivo CSV  '{path}': {e}")
     except Exception as e:
-        print(f"Un error inesperado ocurrio durante la lectura '{path}': {e}")
+        logger.debug(f"Un error inesperado ocurrio durante la lectura '{path}': {e}")
 
     return datostransformados
-
-
-    
-
-
-
 
 
 
@@ -83,17 +84,17 @@ def readdata(idcode,file):
      
         try:
             #leerlo
-            data = pd.read_csv(path+file)
+            data = pd.read_csv(path+file, sep=";")
 
 
         except FileNotFoundError:
-            logger.error("CSV no encontrado")
+            logger.debug("CSV no encontrado")
         except pd.errors.EmptyDataError:
-            print(f"Error: el archivo '{path}' esta vacio o sin datos.")
+            logger.debug("Error: el archivo '{path}' esta vacio o sin datos.")
         except pd.errors.ParserError as e:
-            print(f"Error parsing el archivo CSV  '{path}': {e}")
+            logger.debug("Error parsing el archivo CSV  '{path}': {e}")
         except Exception as e:
-            print(f"Un error inesperado ocurrio durante la lectura '{path}': {e}")
+            logger.debug("Un error inesperado ocurrio durante la lectura '{path}': {e}")
 
     else:
 
@@ -117,7 +118,7 @@ def readdata(idcode,file):
 
             return data
         except ModuleNotFoundError:
-            logger.error("La librería 'ucimlrepo' no está instalada.")
+            logger.debug("La librería 'ucimlrepo' no está instalada.")
             # Puedes añadir aquí un comando para instalarla, por ejemplo:
             import subprocess
             subprocess.check_call(["pip", "install", "ucimlrepo"])
