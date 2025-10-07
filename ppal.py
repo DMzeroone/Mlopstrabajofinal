@@ -36,6 +36,12 @@ if __name__ == "__main__":
     logger.debug("Data describe")
     logger.debug(data.describe())
 
+    #fecha formateada.
+    logger.debug("Data fecha")
+    logger.debug(data['fecha_formateada'])
+
+
+    
 #    print(data.info())
 
  

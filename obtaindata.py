@@ -16,6 +16,8 @@ def existdata(file):
         return True
     
     return False
+
+
     
 def cleandata(datos):
 
@@ -46,6 +48,15 @@ def cleandata(datos):
 
     datostransformados['pets_allowed'].fillna('No',inplace=True)
     datostransformados = pd.get_dummies(datostransformados, columns=['pets_allowed'], prefix='pets', drop_first=True, dtype=int)
+
+
+    #cambiando de unixstamp a time normal.
+    datostransformados['fecha'] = pd.to_datetime(datostransformados['time'], unit='s')
+
+    # Formatear a dd-mm-yyyy
+    datostransformados['fecha_formateada'] = datostransformados['fecha'].dt.strftime('%d-%m-%Y')
+    del datostransformados['fecha']
+
 
 
     #datostransformados = pd.get_dummies(datostransformados, columns=['price_type'], prefix='pri', drop_first=True, dtype=int)
