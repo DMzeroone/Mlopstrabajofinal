@@ -13,6 +13,9 @@ from obtaindata import readdata as rd
 #dataframe receive data read it from ucimlrepo
 data =  pd.DataFrame()
 
+#file:filename csv dataset
+file = "dataset.csv" 
+
 # Configure basic logging to the console
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -25,7 +28,7 @@ if __name__ == "__main__":
     idcode=555
    
 
-    data = rd(idcode)
+    data = rd(idcode,file)
 
     logger.debug("Data obtain from UCIMLrepo:")
     logger.debug(data.info())
@@ -33,6 +36,12 @@ if __name__ == "__main__":
     logger.debug("Data describe")
     logger.debug(data.describe())
 
+    #fecha formateada.
+    logger.debug("Data fecha")
+    logger.debug(data['fecha_formateada'])
+
+
+    
 #    print(data.info())
 
-
+ 
