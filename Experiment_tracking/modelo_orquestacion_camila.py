@@ -20,6 +20,9 @@ from prefect import task, flow, get_run_logger
 from prefect.artifacts import create_table_artifact, create_markdown_artifact
 
 
+#from pathlib import Path
+
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("orquestacion")
@@ -29,19 +32,23 @@ DEFAULT_MLRUNS = "file:./mlruns"
 # MLflow configuration with fallback
 def setup_mlflow():
     """Setup MLflow with proper error handling and fallback options."""
-    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+#    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+
+    
+
     try:
-        mlflow.set_tracking_uri(mlflow_uri)
+        #mlflow.set_tracking_uri(mlflow_uri)
+        mlflow.set_tracking_uri("http://186.121.46.71:5000")
         # Test connection
         mlflow.search_experiments()
-        logger.info(f"Connected to MLflow at: {mlflow_uri}")
+        #logger.info(f"Connected to MLflow at: {mlflow_uri}")
     except Exception as e:
-        logger.warning(f"Failed to connect to {mlflow_uri}: {e}")
+        #logger.warning(f"Failed to connect to {mlflow_uri}: {e}")
         logger.info("Falling back to local SQLite database")
         mlflow.set_tracking_uri("sqlite:///mlflow.db")
     
     try:
-        mlflow.set_experiment("nyc-taxi-experiment-prefect")
+        mlflow.set_experiment("Rent Apartment Camila")
     except Exception as e:
         logger.error(f"Failed to set MLflow experiment: {e}")
         raise
@@ -52,8 +59,9 @@ setup_mlflow()
 
 @task(name="load_data", description="Load precios inmuebles", retries=3, retry_delay_seconds=10)
 def load_data(path: str) -> pd.DataFrame:
+    #print("cwd ->", Path.cwd())
     logger.info(f"Cargando datos desde: {path}")
-    df = pd.read_csv(path)
+    df = pd.read_csv("./data/dataset.csv", sep=";")
     logger.info(f"Datos cargados con shape: {df.shape}")
     return df
 
@@ -77,6 +85,10 @@ def preprocess(df: pd.DataFrame, numeric_cols=None) -> Tuple[pd.DataFrame, Stand
 @task(name="apply_PCA", description="Aplica PCA a los datos", retries=3, retry_delay_seconds=10)
 def apply_pca(X: pd.DataFrame, n_components: int=2) -> Tuple[np.ndarray, PCA]:
     pca = PCA(n_components=n_components, random_state=42)
+
+    ########
+    X.dropna(inplace=True)
+
     X_pca = pca.fit_transform(X)
     logger.info(f"PCA aplicado: var explicada por componente: {pca.explained_variance_ratio_}")
     return X_pca, pca
