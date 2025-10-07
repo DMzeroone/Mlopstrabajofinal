@@ -86,6 +86,15 @@ dmypy.json
 # DATA SCIENCE SPECIFIC
 # =============================================================================
 
+# MLflow (tracking y artefactos)
+mlruns/
+**/mlruns/
+mlartifacts/
+**/mlartifacts/
+artifacts/
+**/artifacts/
+mlflow.db
+
 # Data files
 *.csv
 *.tsv
