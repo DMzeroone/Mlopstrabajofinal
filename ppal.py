@@ -53,7 +53,7 @@ def existdata(file):
 
 
 #def readdata(idcode,file):
-#@task
+@task
 def extract_data(idcode,file):
     #si el archio existe, lo leo, ya debe estar depurado, sino, lo descargo y lo limpio.
     
@@ -101,7 +101,7 @@ def extract_data(idcode,file):
             subprocess.check_call(["pip", "install", "ucimlrepo"])
     return main_df
 
-#@task
+@task
 def cleaning(main_df):
     
     cleaned_df = main_df.copy()
@@ -164,7 +164,7 @@ def cleaning(main_df):
         
 
 
-#@task
+@task
 def preprocessing(cleaned_df):
     #dataset con datos borrados
     #logger.debug(cleaned_df.head())s
@@ -195,7 +195,7 @@ def preprocessing(cleaned_df):
     #return cleaned_df
 
 
-#@task
+@task
 def training(final_df):
 
     #mlflow.set_tracking_uri("http://127.0.0.1:5000")
@@ -214,9 +214,7 @@ def training(final_df):
     y = final_df['price']          # Variable dependient
 
     # Dividir en entrenamiento y prueba
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     with mlflow.start_run(run_name=experiment_name):
 
@@ -269,40 +267,77 @@ def training(final_df):
         sse = np.sum(residuales ** 2)
         mse_modelo = sse / (n - p - 1)
 
-        # Matriz de covarianza
-        X_with_intercept = np.column_stack([np.ones(len(X_train)), X_train])
-        cov_matrix = mse_modelo * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
+        mlflow.log_metric("sse", sse)
+        mlflow.log_metric("mse_modelo", mse_modelo)
 
-        # Errores estándar de los coeficientes
-        se_intercept = np.sqrt(cov_matrix[0, 0])
-        se_slope = np.sqrt(cov_matrix[1, 1])
 
-        # Valores t
-        t_intercept = modelo.intercept_ / se_intercept
-        t_slope = modelo.coef_[0] / se_slope
 
-        # Valores p
-        p_intercept = 2 * (1 - stats.t.cdf(np.abs(t_intercept), n - p - 1))
-        p_slope = 2 * (1 - stats.t.cdf(np.abs(t_slope), n - p - 1))
+    #bathrooms x price
 
-        print(f"Intercepto - Valor t: {t_intercept:.4f}, Valor p: {p_intercept:.4f}")
-        print(f"Pendiente - Valor t: {t_slope:.4f}, Valor p: {p_slope:.4f}")
+    experiment_name = "Apartment_Price_Bathrooms_Price"
+    mlflow.set_experiment(experiment_name)
 
-        if p_slope < 0.05:
-            print("✅ La relación es estadísticamente significativa (p < 0.05)")
-        else:
-            print("❌ La relación NO es estadísticamente significativa")
+   # 3. Preparar datos para el modelo
+    X = final_df[['bathrooms']]  # Variable independiente   
+    y = final_df['price']          # Variable dependient
 
-        # 10. Intervalos de Confianza
-        confianza = 0.95
-        grados_libertad = n - p - 1
-        t_critico = stats.t.ppf((1 + confianza) / 2, grados_libertad)
+    # Dividir en entrenamiento y prueba
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    with mlflow.start_run(run_name=experiment_name):
 
-        ic_slope_inf = modelo.coef_[0] - t_critico * se_slope
-        ic_slope_sup = modelo.coef_[0] + t_critico * se_slope
+        #4. Entrenar modelo de regresión lineal simple
+        modelo = LinearRegression()
+        modelo.fit(X_train, y_train)
+        # 5. Coeficientes del modelo
+        print("\n=== MODELO DE REGRESIÓN LINEAL ===")
+        print(f"Intercepto (β₀): ${modelo.intercept_:.2f}")
+        print(f"Coeficiente (β₁): ${modelo.coef_[0]:.4f} por sq ft")
+        
 
-        print(f"\nIntervalo de confianza {confianza*100}% para la pendiente:")
-        print(f"(${ic_slope_inf:.4f} por sq ft, ${ic_slope_sup:.4f} por sq ft)")
+        # 6. Predicciones
+        y_pred = modelo.predict(X_test)
+
+        # 7. Métricas de Evaluación
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = np.sqrt(mse)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+
+
+        # Registrar parámetros
+        mlflow.log_param("model_type", "Linear Regression Square x Price")
+        mlflow.log_param("features_used", list(X.columns))
+        mlflow.log_param("train_size", X_train.shape[0])
+        mlflow.log_param("test_size", X_test.shape[0])
+        
+        # Registrar métricas
+        mlflow.log_metric("mse", mse)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("r2_score", r2)
+        
+        # Registrar el modelo
+        mlflow.sklearn.log_model(modelo, "model")
+        
+        # Registrar el scaler
+        #mlflow.sklearn.log_model(scaler, "scaler")
+
+        # 9. Pruebas de Significancia Estadística
+        print("\n=== SIGNIFICANCIA ESTADÍSTICA ===")
+
+        # Calcular errores estándar y valores t
+        n = len(X_train)
+        p = 1  # número de predictores
+
+        # Error estándar de los residuales
+        residuales = y_test - y_pred
+        sse = np.sum(residuales ** 2)
+        mse_modelo = sse / (n - p - 1)
+
+        mlflow.log_metric("sse", sse)
+        mlflow.log_metric("mse_modelo", mse_modelo)
 
 
     model_path=final_df.copy()
@@ -311,7 +346,7 @@ def training(final_df):
 
 
 
-#@flow
+@flow
 def data_rent():
     #connection = db_connection()
     main_df = extract_data(idcode,file)
@@ -322,15 +357,15 @@ def data_rent():
 
 if __name__ == "__main__":
     #code for Apartment for Rent Classified
-    data_rent()
-    '''
+    #data_rent()
+    
     data_rent.serve(
         name="data_rent",
         cron="*/2 * * * *",
         description="Machine learning pipeline to train our model.",
         tags=["data-rent"]
     )
-    '''
+    
     '''
     data = rd(idcode,file)
 
